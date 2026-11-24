@@ -1,8 +1,8 @@
 import numpy as np
 
 class CogniticeRadioEnv:
-    def __init__(self):
-        self.N_SU = [1, 5, 10, 15]              #Số lượng SU
+    def __init__(self, num_su):
+        self.N_SU = num_su                      #Số lượng SU
         self.P_max = 1                          #Công suất phát tối đa
         self.N = 20                             #Số lượng kênh
         self.A = 10                             #Số kênh bị chiếm bởi PU1
@@ -18,22 +18,22 @@ class CogniticeRadioEnv:
         self.w2 = 0.7                           #Phạt nhiễu
         self.beta = 0.5                         #Hệ số cân bằng giữa phần thưởng cá nhân và phần thưởng toàn cục
 
-        self.S = np.zeros((self.N, 1 + self.N_SU[1]))  #Khởi tạo trạng thái ban đầu
+        self.S = np.zeros((self.N, 1 + self.N_SU))  #Khởi tạo trạng thái ban đầu
 
-        self.data_rate = np.zeros(self.N_SU[1])
-        self.personal_reward_combined = np.zeros((self.N, self.N_SU[1]))
-        self.personal_reward = np.zeros((self.N, self.N_SU[1]))
+        self.data_rate = np.zeros((self.N, self.N_SU))
+        self.personal_reward_combined = np.zeros((self.N, self.N_SU))
+        self.personal_reward = np.zeros((self.N, self.N_SU))
         self.global_reward = 0
-        self.penalties = np.zeros((self.N, self.N_SU[1]))
+        self.penalties = np.zeros((self.N, self.N_SU))
 
-        self.P_st = np.zeros((self.N, self.N_SU[1]))  #Công suất phát của SU_tx
+        self.P_st = np.zeros((self.N, self.N_SU))  #Công suất phát của SU_tx
         self.P_pt = np.zeros((self.N, 2))  #Công suất phát của PU
-        self.k = np.zeros((self.N, self.N_SU[1]))    #Chỉ số hành động SU (0: thu năng lượng + truyền tin, 1: thu năng lượng)
-        self.rho = np.zeros((self.N, self.N_SU[1]))   #Hệ số kênh truyền của SU
+        self.k = np.zeros((self.N, self.N_SU))    #Chỉ số hành động SU (0: thu năng lượng + truyền tin, 1: thu năng lượng)
+        self.rho = np.zeros((self.N, self.N_SU))   #Hệ số kênh truyền của SU
         self.E_ambient = np.random.uniform(0, self.E_max)  #Năng lượng thu hoạch từ môi trường
-        self.energy_used = np.zeros((self.N, self.N_SU[1]))  #Năng lượng sử dụng của SU
-        self.noise_to_PU = np.zeros((self.N, self.N_SU[1]))  #Nhiễu gây ra cho PU bởi SU
-        self.SU_noise = np.zeros((self.N, self.N_SU[1]))
+        self.energy_used = np.zeros((self.N, self.N_SU))  #Năng lượng sử dụng của SU
+        self.noise_to_PU = np.zeros((self.N, self.N_SU))  #Nhiễu gây ra cho PU bởi SU
+        self.SU_noise = np.zeros((self.N, self.N_SU))
 
 
     def generate_random_channel(self):
@@ -96,7 +96,8 @@ class CogniticeRadioEnv:
             self.energy_used[time_step][i] = (1 - self.k[time_step][i]) * self.P_st[time_step][i] * self.T  * (1 - self.rho[time_step][i]) 
 
             #Nang lượng dự trữ của SU ở đầu khe thời gian tiếp theo (t+1) = min(Năng lượng dự trữ tối đa, Năng lượng dự trữ ở đầu khe thời gian hiện tại + Năng lượng thu hoạch - Năng lượng sử dụng)
-            self.C[time_step + 1][i] = min(self.C_max, self.C[time_step][i] + self.E[time_step][i] - self.energy_used[time_step][i])
+            if time_step < self.N - 1:
+                self.C[time_step + 1][i] = min(self.C_max, self.C[time_step][i] + self.E[time_step][i] - self.energy_used[time_step][i])
            
             #Noise của các SU khác  
             for j in range(0, i):
